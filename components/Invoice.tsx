@@ -6,12 +6,20 @@ interface InvoiceProps {
   invoiceData: InvoiceData;
   onBack: () => void;
   backButtonText: string;
+  onSave?: (invoiceData: InvoiceData) => Promise<boolean | void>;
 }
 
-const Invoice: React.FC<InvoiceProps> = ({ invoiceData, onBack, backButtonText }) => {
+const Invoice: React.FC<InvoiceProps> = ({ invoiceData, onBack, backButtonText, onSave }) => {
   const invoiceRef = useRef<HTMLDivElement>(null);
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
+    // Save to Firestore before printing (only if not already saved)
+    if (onSave && !invoiceData.id) {
+      const saved = await onSave(invoiceData);
+      if (!saved) {
+        return; // Don't print if save failed
+      }
+    }
     window.print();
   };
   
@@ -24,10 +32,68 @@ const Invoice: React.FC<InvoiceProps> = ({ invoiceData, onBack, backButtonText }
     <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg">
       <div ref={invoiceRef} className="print-area">
         <header className="flex justify-between items-start pb-6 border-b-2 border-amber-800">
-          <div>
-            <h1 className="text-3xl font-bold text-amber-900">ગુજરાતી શુદ્ધ તેલ</h1>
-            <p className="text-gray-600">Pure Groundnut Oil</p>
-            <p className="text-xs text-gray-500 mt-2">123 Oil Mill Road, Rajkot, Gujarat</p>
+          <div className="flex gap-4 items-start">
+            {/* Logo */}
+            <div className="shrink-0">
+              <svg width="100" height="100" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+                {/* Background circle */}
+                <circle cx="200" cy="200" r="190" fill="#2D5016" opacity="0.1"/>
+                
+                {/* Outer decorative circle */}
+                <circle cx="200" cy="200" r="170" fill="none" stroke="#D4A522" strokeWidth="3"/>
+                
+                {/* Oil drop icon */}
+                <g transform="translate(200, 140)">
+                  {/* Main oil drop */}
+                  <path d="M 0,-50 C -20,-50 -35,-35 -35,-15 C -35,10 0,50 0,50 C 0,50 35,10 35,-15 C 35,-35 20,-50 0,-50 Z" 
+                        fill="#D4A522" stroke="#2D5016" strokeWidth="2"/>
+                  
+                  {/* Shine effect on drop */}
+                  <ellipse cx="-8" cy="-20" rx="8" ry="12" fill="#FFF" opacity="0.4"/>
+                  
+                  {/* Small drops */}
+                  <circle cx="-45" cy="0" r="6" fill="#D4A522" opacity="0.7"/>
+                  <circle cx="45" cy="0" r="6" fill="#D4A522" opacity="0.7"/>
+                  <circle cx="-55" cy="20" r="4" fill="#D4A522" opacity="0.5"/>
+                  <circle cx="55" cy="20" r="4" fill="#D4A522" opacity="0.5"/>
+                </g>
+                
+                {/* Leaf elements for natural/pure theme */}
+                <g transform="translate(120, 120) rotate(-30)">
+                  <path d="M 0,0 Q 10,-15 0,-30" fill="none" stroke="#4A7C2E" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M 0,-30 Q 15,-22 12,-10 Q 8,-5 0,0" fill="#5A9B3A" opacity="0.7"/>
+                  <path d="M 0,-30 Q -15,-22 -12,-10 Q -8,-5 0,0" fill="#6BAF4A" opacity="0.7"/>
+                </g>
+                
+                <g transform="translate(280, 120) rotate(30) scale(-1, 1)">
+                  <path d="M 0,0 Q 10,-15 0,-30" fill="none" stroke="#4A7C2E" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M 0,-30 Q 15,-22 12,-10 Q 8,-5 0,0" fill="#5A9B3A" opacity="0.7"/>
+                  <path d="M 0,-30 Q -15,-22 -12,-10 Q -8,-5 0,0" fill="#6BAF4A" opacity="0.7"/>
+                </g>
+                
+                {/* Gujarati Text */}
+                <text x="200" y="255" fontFamily="'Noto Sans Gujarati', Arial" fontSize="28" fontWeight="700" 
+                      textAnchor="middle" fill="#2D5016">બાપા સીતારામ</text>
+                
+                <text x="200" y="285" fontFamily="'Noto Sans Gujarati', Arial" fontSize="22" fontWeight="600" 
+                      textAnchor="middle" fill="#4A7C2E">મીની ઓઈલ મીલ</text>
+                
+                {/* Decorative bottom element */}
+                <line x1="120" y1="310" x2="280" y2="310" stroke="#D4A522" strokeWidth="2" opacity="0.6"/>
+                <circle cx="200" cy="310" r="4" fill="#D4A522"/>
+                
+                {/* Tagline in Gujarati */}
+                <text x="200" y="330" fontFamily="'Noto Sans Gujarati', Arial" fontSize="12" 
+                      textAnchor="middle" fill="#666" fontStyle="italic">શુદ્ધતા અને ગુણવત્તા</text>
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-amber-900">શુદ્ધ મગફળીનું તેલ</h1>
+              
+              <p className="text-xs text-gray-500 mt-2">શ્રીયમ હેરિટેજ ફ્લેટ્સ ની પાછળ, <br></br>
+                સરદાર પટેલ રિંગ રોડ, બાકરોલ(બાદ્રાબાદ) સર્કલ પાસે<br></br>
+                અમદાવાદ, ગુજરાત ૩૮૨૨૧૦</p>
+            </div>
           </div>
           <div className="text-right">
             <h2 className="text-2xl font-bold text-gray-700">INVOICE</h2>
@@ -59,7 +125,7 @@ const Invoice: React.FC<InvoiceProps> = ({ invoiceData, onBack, backButtonText }
             </thead>
             <tbody>
               {invoiceData.items.map((item, index) => (
-                <tr key={item.product.id} className="border-b border-gray-200">
+                <tr key={item.lineId ?? `${item.product.id}-${index}`} className="border-b border-gray-200">
                   <td className="p-3">{index + 1}</td>
                   <td className="p-3 font-medium">{item.product.name}</td>
                   <td className="p-3 text-center">{item.quantity}</td>
@@ -90,7 +156,6 @@ const Invoice: React.FC<InvoiceProps> = ({ invoiceData, onBack, backButtonText }
 
         <footer className="mt-12 pt-6 border-t border-gray-200 text-center">
             <p className="text-sm text-gray-600">Thank you for your business!</p>
-            <p className="text-xs text-gray-400 mt-1">This is a computer-generated invoice.</p>
         </footer>
       </div>
 
@@ -105,7 +170,7 @@ const Invoice: React.FC<InvoiceProps> = ({ invoiceData, onBack, backButtonText }
           onClick={handlePrint}
           className="px-6 py-2 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition"
         >
-          Print Invoice
+          {invoiceData.id ? 'Print Invoice' : 'Save & Print Invoice'}
         </button>
       </div>
     </div>
